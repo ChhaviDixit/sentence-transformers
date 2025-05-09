@@ -8,6 +8,7 @@ from torch import Tensor
 
 from .util import (
     cos_sim,
+    js_div,
     dot_score,
     euclidean_sim,
     manhattan_sim,
@@ -33,6 +34,7 @@ class SimilarityFunction(Enum):
     DOT = "dot"  # Alias for DOT_PRODUCT
     EUCLIDEAN = "euclidean"
     MANHATTAN = "manhattan"
+    JS_DIVERGENCE = "js_divergence"
 
     @staticmethod
     def to_similarity_fn(
@@ -67,6 +69,8 @@ class SimilarityFunction(Enum):
             return manhattan_sim
         if similarity_function == SimilarityFunction.EUCLIDEAN:
             return euclidean_sim
+        if similarity_function == SimilarityFunction.JS_DIVERGENCE:
+            return js_div
 
         raise ValueError(
             f"The provided function {similarity_function} is not supported. Use one of the supported values: {SimilarityFunction.possible_values()}."

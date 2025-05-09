@@ -11,7 +11,7 @@ from sentence_transformers.SentenceTransformer import SentenceTransformer
 
 
 class MultipleNegativesRankingLoss(nn.Module):
-    def __init__(self, model: SentenceTransformer, scale: float = 20.0, similarity_fct=util.cos_sim) -> None:
+    def __init__(self, model: SentenceTransformer, scale: float = 20.0, similarity_fct=util.js_div) -> None:
         """
         Given a list of (anchor, positive) pairs or (anchor, positive, negative) triplets, this loss optimizes the following:
 
