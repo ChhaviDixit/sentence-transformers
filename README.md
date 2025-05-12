@@ -1,229 +1,95 @@
-<!--- BADGES: START --->
-[![HF Models](https://img.shields.io/badge/%F0%9F%A4%97-models-yellow)](https://huggingface.co/models?library=sentence-transformers)
-[![GitHub - License](https://img.shields.io/github/license/UKPLab/sentence-transformers?logo=github&style=flat&color=green)][#github-license]
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sentence-transformers?logo=pypi&style=flat&color=blue)][#pypi-package]
-[![PyPI - Package Version](https://img.shields.io/pypi/v/sentence-transformers?logo=pypi&style=flat&color=orange)][#pypi-package]
-[![Docs - GitHub.io](https://img.shields.io/static/v1?logo=github&style=flat&color=pink&label=docs&message=sentence-transformers)][#docs-package]
-<!-- [![PyPI - Downloads](https://img.shields.io/pypi/dm/sentence-transformers?logo=pypi&style=flat&color=green)][#pypi-package] -->
 
-[#github-license]: https://github.com/UKPLab/sentence-transformers/blob/master/LICENSE
-[#pypi-package]: https://pypi.org/project/sentence-transformers/
-[#conda-forge-package]: https://anaconda.org/conda-forge/sentence-transformers
-[#docs-package]: https://www.sbert.net/
-<!--- BADGES: END --->
-
-# Sentence Transformers: Embeddings, Retrieval, and Reranking
-
-This framework provides an easy method to compute embeddings for accessing, using, and training state-of-the-art embedding and reranker models. It compute embeddings using Sentence Transformer models ([quickstart](https://sbert.net/docs/quickstart.html#sentence-transformer)) or to calculate similarity scores using Cross-Encoder (a.k.a. reranker) models ([quickstart](https://sbert.net/docs/quickstart.html#cross-encoder)). This unlocks a wide range of applications, including [semantic search](https://sbert.net/examples/applications/semantic-search/README.html), [semantic textual similarity](https://sbert.net/docs/sentence_transformer/usage/semantic_textual_similarity.html), and [paraphrase mining](https://sbert.net/examples/applications/paraphrase-mining/README.html).
-
-A wide selection of over [10,000 pre-trained Sentence Transformers models](https://huggingface.co/models?library=sentence-transformers) are available for immediate use on 🤗 Hugging Face, including many of the state-of-the-art models from the [Massive Text Embeddings Benchmark (MTEB) leaderboard](https://huggingface.co/spaces/mteb/leaderboard). Additionally, it is easy to train or finetune your own [embedding models](https://sbert.net/docs/sentence_transformer/training_overview.html) or [reranker models](https://sbert.net/docs/cross_encoder/training_overview.html) using Sentence Transformers, enabling you to create custom models for your specific use cases.
-
-For the **full documentation**, see **[www.SBERT.net](https://www.sbert.net)**.
-
-## Installation
-
-We recommend **Python 3.9+**, **[PyTorch 1.11.0+](https://pytorch.org/get-started/locally/)**, and **[transformers v4.34.0+](https://github.com/huggingface/transformers)**.
-
-**Install with pip**
-
-```
-pip install -U sentence-transformers
-```
-
-**Install with conda**
-
-```
-conda install -c conda-forge sentence-transformers
-```
-
-**Install from sources**
-
-Alternatively, you can also clone the latest version from the [repository](https://github.com/UKPLab/sentence-transformers) and install it directly from the source code:
-
-````
-pip install -e .
-```` 
-
-**PyTorch with CUDA**
-
-If you want to use a GPU / CUDA, you must install PyTorch with the matching CUDA Version. Follow
-[PyTorch - Get Started](https://pytorch.org/get-started/locally/) for further details how to install PyTorch.
-
-## Getting Started
-
-See [Quickstart](https://www.sbert.net/docs/quickstart.html) in our documentation.
-
-### Embedding Models
-
-First download a pretrained embedding a.k.a. Sentence Transformer model.
-
-````python
-from sentence_transformers import SentenceTransformer
-
-model = SentenceTransformer("all-MiniLM-L6-v2")
-````
-
-Then provide some texts to the model.
-
-````python
-sentences = [
-    "The weather is lovely today.",
-    "It's so sunny outside!",
-    "He drove to the stadium.",
-]
-embeddings = model.encode(sentences)
-print(embeddings.shape)
-# => (3, 384)
-````
-
-And that's already it. We now have a numpy arrays with the embeddings, one for each text. We can use these to compute similarities.
-
-````python
-similarities = model.similarity(embeddings, embeddings)
-print(similarities)
-# tensor([[1.0000, 0.6660, 0.1046],
-#         [0.6660, 1.0000, 0.1411],
-#         [0.1046, 0.1411, 1.0000]])
-````
-
-### Reranker Models
-
-First download a pretrained reranker a.k.a. Cross Encoder model.
-
-```python
-from sentence_transformers import CrossEncoder
-
-# 1. Load a pretrained CrossEncoder model
-model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L6-v2")
-```
-
-Then provide some texts to the model.
-
-```python
-# The texts for which to predict similarity scores
-query = "How many people live in Berlin?"
-passages = [
-    "Berlin had a population of 3,520,031 registered inhabitants in an area of 891.82 square kilometers.",
-    "Berlin has a yearly total of about 135 million day visitors, making it one of the most-visited cities in the European Union.",
-    "In 2013 around 600,000 Berliners were registered in one of the more than 2,300 sport and fitness clubs.",
-]
-
-# 2a. predict scores pairs of texts
-scores = model.predict([(query, passage) for passage in passages])
-print(scores)
-# => [8.607139 5.506266 6.352977]
-```
-
-And we're good to go. You can also use [`model.rank`](https://sbert.net/docs/package_reference/cross_encoder/cross_encoder.html#sentence_transformers.cross_encoder.CrossEncoder.rank) to avoid having to perform the reranking manually:
-
-```python
-# 2b. Rank a list of passages for a query
-ranks = model.rank(query, passages, return_documents=True)
-
-print("Query:", query)
-for rank in ranks:
-    print(f"- #{rank['corpus_id']} ({rank['score']:.2f}): {rank['text']}")
-"""
-Query: How many people live in Berlin?
-- #0 (8.61): Berlin had a population of 3,520,031 registered inhabitants in an area of 891.82 square kilometers.
-- #2 (6.35): In 2013 around 600,000 Berliners were registered in one of the more than 2,300 sport and fitness clubs.
-- #1 (5.51): Berlin has a yearly total of about 135 million day visitors, making it one of the most-visited cities in the European Union.
-"""
-```
-
-## Pre-Trained Models
-
-We provide a large list of pretrained models for more than 100 languages. Some models are general purpose models, while others produce embeddings for specific use cases. 
-
-* [Pretrained Sentence Transformer (Embedding) Models](https://sbert.net/docs/sentence_transformer/pretrained_models.html)
-* [Pretrained Cross Encoder (Reranker) Models](https://sbert.net/docs/cross_encoder/pretrained_models.html)
-
-## Training
-
-This framework allows you to fine-tune your own sentence embedding methods, so that you get task-specific sentence embeddings. You have various options to choose from in order to get perfect sentence embeddings for your specific task. 
-
-* Embedding Models
-    * [Sentence Transformer > Training Overview](https://www.sbert.net/docs/sentence_transformer/training_overview.html)
-    * [Sentence Transformer > Training Examples](https://www.sbert.net/docs/sentence_transformer/training/examples.html) or [training examples on GitHub](https://github.com/UKPLab/sentence-transformers/tree/master/examples/sentence_transformer/training).
-* Reranker Models
-    * [Cross Encoder > Training Overview](https://www.sbert.net/docs/cross_encoder/training_overview.html)
-    * [Cross Encoder > Training Examples](https://www.sbert.net/docs/cross_encoder/training/examples.html) or [training examples on GitHub](https://github.com/UKPLab/sentence-transformers/tree/master/examples/cross_encoder/training).
-
-Some highlights across both types of training are:
-- Support of various transformer networks including BERT, RoBERTa, XLM-R, DistilBERT, Electra, BART, ...
-- Multi-Lingual and multi-task learning
-- Evaluation during training to find optimal model
-- [20+ loss functions](https://www.sbert.net/docs/package_reference/sentence_transformer/losses.html) for embedding models and [10+ loss functions](https://www.sbert.net/docs/package_reference/cross_encoder/losses.html) for reranker models, allowing you to tune models specifically for semantic search, paraphrase mining, semantic similarity comparison, clustering, triplet loss, contrastive loss, etc.
-
-## Application Examples
-
-You can use this framework for:
-
-- [Computing Sentence Embeddings](https://www.sbert.net/examples/sentence_transformer/applications/computing-embeddings/README.html)
-- [Semantic Textual Similarity](https://www.sbert.net/docs/usage/semantic_textual_similarity.html)
-- [Semantic Search](https://www.sbert.net/examples/sentence_transformer/applications/semantic-search/README.html)
-- [Retrieve & Re-Rank](https://www.sbert.net/examples/sentence_transformer/applications/retrieve_rerank/README.html) 
-- [Clustering](https://www.sbert.net/examples/sentence_transformer/applications/clustering/README.html)
-- [Paraphrase Mining](https://www.sbert.net/examples/sentence_transformer/applications/paraphrase-mining/README.html)
-- [Translated Sentence Mining](https://www.sbert.net/examples/sentence_transformer/applications/parallel-sentence-mining/README.html)
-- [Multilingual Image Search, Clustering & Duplicate Detection](https://www.sbert.net/examples/sentence_transformer/applications/image-search/README.html)
-
-and many more use-cases.
-
-For all examples, see [examples/sentence_transformer/applications](https://github.com/UKPLab/sentence-transformers/tree/master/examples/sentence_transformer/applications).
-
-## Development setup
-
-After cloning the repo (or a fork) to your machine, in a virtual environment, run:
-
-```
-python -m pip install -e ".[dev]"
-
-pre-commit install
-```
-
-To test your changes, run:
-
-```
-pytest
-```
-
-## Citing & Authors
-
-If you find this repository helpful, feel free to cite our publication [Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks](https://arxiv.org/abs/1908.10084):
-
-```bibtex 
-@inproceedings{reimers-2019-sentence-bert,
-    title = "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks",
-    author = "Reimers, Nils and Gurevych, Iryna",
-    booktitle = "Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing",
-    month = "11",
-    year = "2019",
-    publisher = "Association for Computational Linguistics",
-    url = "https://arxiv.org/abs/1908.10084",
-}
-```
-
-If you use one of the multilingual models, feel free to cite our publication [Making Monolingual Sentence Embeddings Multilingual using Knowledge Distillation](https://arxiv.org/abs/2004.09813):
-
-```bibtex
-@inproceedings{reimers-2020-multilingual-sentence-bert,
-    title = "Making Monolingual Sentence Embeddings Multilingual using Knowledge Distillation",
-    author = "Reimers, Nils and Gurevych, Iryna",
-    booktitle = "Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing",
-    month = "11",
-    year = "2020",
-    publisher = "Association for Computational Linguistics",
-    url = "https://arxiv.org/abs/2004.09813",
-}
-```
-
-Please have a look at [Publications](https://www.sbert.net/docs/publications.html) for our different publications that are integrated into SentenceTransformers.
-
-Maintainer: [Tom Aarsen](https://github.com/tomaarsen), 🤗 Hugging Face
-
-https://www.ukp.tu-darmstadt.de/
-
-Don't hesitate to open an issue if something is broken (and it shouldn't be) or if you have further questions.
-
-> This repository contains experimental software and is published for the sole purpose of giving additional background details on the respective publication.
+# HPML Project: IBM Project 8: Energy Distance in IR Tasks
+
+## Team Information
+- **Members**:
+  - Chhavi Dixit (CD3496)
+  - Chandhru Karthick (CK3255)
+  - Elie Gross (EG3346)
+
+---
+
+## Problem Statement
+Cosine similarity uses only the [CLS] token for both query and document representation. It specifically focuses on the angle between the two vectors and overlooks statistical distribution of data. This leads to loss of information for long context retrieval while there is no actual “distance” between query and vector. The project is exploring new distance metrics and use-cases to be used alongside cosine similarity. The focus here is on retrieval tasks, as improving retrieval is a huge bump in modern language model pipelines where retrieval errors propagate multiplicatively down the line. If it can generalize well to long queries as expected we would be able to deal with long context IR with better precision. We are exploring three modeuls, exploring hamming distance within Energy distance, exploring JS Diveregence a an alternate distance metric, testing performance on other benchmark datasets. This repository focuses on implementing and testing JS Divergence as distance metric.
+
+---
+
+## Model Description
+The model uses embeddings learned from the distilbert model on HotPotQA dataset's train and dev set. In the distance metrics, the JS divergence function is defined in "Sentence-transformers" and the "MTEB" repositories to be used for training and testing respectively. This repository is for training with distance metrics by the bier repository.
+
+---
+
+## Final Results
+Information Clamping in range epsilon=1e-6
+| Metric               | Value       |
+|----------------------|-------------|
+| ndcg at 1 | 0.0023      |
+| ndcg at 3    | 0.00282    |
+| ndcg at 5           | 0.00349       |
+| ndcg at 10      | 0.00443       |
+| ndcg at 100  | 0.00557        |
+| ndcg at 1000               | 0.02107 |
+
+Information Clamping in range epsilon=1e-5
+| Metric               | Value       |
+|----------------------|-------------|
+| ndcg at 1 | 0.07549      |
+| ndcg at 3    | 0.06435    |
+| ndcg at 5           | 0.07129       |
+| ndcg at 10      | 0.0821       |
+| ndcg at 100  | 0.10972        |
+| ndcg at 1000               | 0.13704 |
+
+Hence, reducing the range gives better results.
+
+
+## Reproducibility Instructions: Energy Distance Project Training and Inference
+
+### Setting up Python Environment and Installing Required Libraries
+1. conda create --name myenv39 python=3.9
+2. conda activate myenv39
+3. pip install --upgrade pip --index-url https://pypi.org/simple
+4. pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
+5. git clone https://github.com/ChhaviDixit/beir.git
+6. git clone https://github.com/ChhaviDixit/mteb.git
+7. pip install -e /path_to_sentence-transformers/sentence-transformers
+8. pip install -e /path_to_mteb/mteb
+9. git clone https://github.com/gnatesan/beir.git
+
+### Wandb Dashboard
+View training and evaluation metrics here: https://wandb.ai/wisebayes-columbia-university/HPML-Energy?nw=nwuserwisebayes
+
+### Sanity Check
+1. conda create --name testenv python=3.9
+2. conda activate testenv
+3. pip install --upgrade pip --index-url https://pypi.org/simple
+4. pip install sentence-transformers
+5. pip install mteb
+6. sbatch inference_CosSim.sh (Make sure the batch script calls eval_dataset.py and a baseline model is being used. *i.e. model = SentenceTransformer("Snowflake/snowflake-arctic-embed-m-v1.5")*)
+7. Cross reference the inference results with what is on the leaderboard. https://huggingface.co/spaces/mteb/leaderboard
+
+### Model Training
+1. cd /path_to_beir/beir/examples/retrieval/training
+2. Before running training, make sure the model, model_name, and hyperparameters (LR, scale) are correct. 
+nano train_sbert_latest_2.py or nano train_sbert_ddp_2.py to change model, model_name, and LR. 
+nano sentence-transformers/sentence-transformers/losses/MultipleNegativesRankingLoss.py to change scale. 
+3. sbatch train.sh OR sbatch train_ddp.sh if using multiple GPUs
+4. Trained model will be saved in /path_to_beir/beir/examples/retrieval/training/output
+
+### Model Evaluation
+1. sbatch inference_ED.sh if evaluating an ED trained model (myenv39 conda environment must be setup)
+2. sbatch inference_CosSim.sh if evaluating a cosine similarity trained model (testenv conda environment must be setup)
+3. Make sure the proper python script in the batch file is being run (if evaluating entire dataset or subset based on query lengths)
+
+### IMPORTANT FILES
+1. train.sh - Batch script to run model training on a single GPU.  
+2. train_ddp.sh - Batch script to run model training on multiple GPUs. Make sure number of GPUs requested are properly set.
+3. inference_ED.sh - Batch script to run inference on an ED trained model. Can run on either entire dataset or subset based on query lengths.
+4. inference_CosSim.sh Batch script to run inference on a CosSim trained model. Can run on either entire dataset or subset based on query lengths.
+5. train_sbert_latest_2.py - Python script to run model training on a single GPU. Uses ir_evaluator to evaluate on a dev set after each epoch of training and only saves the best model, make sure ir_evaluator is enabled.
+6. train_sbert_ddp_2.py - Python script to run model training on multiple GPUs using DDP. Currently does not use an ir_evaluator to evaluate on a dev set after each epoch of training.
+7. eval_dataset.py - Python script to run inference on entire BEIR dataset.
+8. eval_dataset_subset_length.py - Python script to run inference on subset of BEIR dataset based on query lengths.
+
+### IMPORTANT NOTES
+1. All files used for training should be present when you clone the beir repository in beir/examples/retrieval/training folder.
