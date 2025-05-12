@@ -15,7 +15,7 @@ Cosine similarity uses only the [CLS] token for both query and document represen
 ---
 
 ## Model Description
-The model uses embeddings learned from the distilbert model on HotPotQA dataset's train and dev set. In the distance metrics, the JS divergence function is defined in "Sentence-transformers" and the "MTEB" repositories to be used for training and testing respectively. This repository is for training with distance metrics by the bier repository.
+The model uses embeddings learned from the distilbert model on HotPotQA dataset's train and dev set. In the distance metrics, the JS divergence function is defined in "Sentence-transformers" and the "MTEB" repositories to be used for training and testing respectively. This repository is for training with distance metrics by the beir repository.
 
 ---
 
@@ -54,7 +54,7 @@ Hence, reducing the range gives better results.
 6. git clone https://github.com/ChhaviDixit/mteb.git
 7. pip install -e /path_to_sentence-transformers/sentence-transformers
 8. pip install -e /path_to_mteb/mteb
-9. git clone https://github.com/gnatesan/beir.git
+9. git clone https://github.com/ChhaviDixit/beir.git
 
 ### Wandb Dashboard
 View training and evaluation metrics here: https://wandb.ai/wisebayes-columbia-university/HPML-Energy?nw=nwuserwisebayes
