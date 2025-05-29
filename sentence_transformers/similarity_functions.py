@@ -112,6 +112,8 @@ class SimilarityFunction(Enum):
             return pairwise_manhattan_sim
         if similarity_function == SimilarityFunction.EUCLIDEAN:
             return pairwise_euclidean_sim
+        if similarity_function == SimilarityFunction.JS_DIVERGENCE:
+            return js_div
 
         raise ValueError(
             f"The provided function {similarity_function} is not supported. Use one of the supported values: {SimilarityFunction.possible_values()}."
