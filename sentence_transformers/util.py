@@ -74,7 +74,7 @@ def _convert_to_batch_tensor(a: list | np.ndarray | Tensor) -> Tensor:
     a = _convert_to_batch(a)
     return a
 
-def tensor_transform(x: Tensor) -> Tensor:
+def tensor_transform(x):
     
     # linearly tranforms the input vector to range [0, c], followed by L1 normalization for "probability distribution"
 
@@ -98,34 +98,33 @@ def tensor_transform(x: Tensor) -> Tensor:
 
 
 
-def js_div(a: Tensor, b: Tensor) -> Tensor:
+def js_div(a, b):
+    a_tensor = torch.as_tensor(a)
+    b_tensor = torch.as_tensor(b)
+    if (a_tensor<0).any() or (b_tensor<0).any():
+        print("Negative values present in input")
+        raise ValueError("Negative Input")
     a = tensor_transform(torch.as_tensor(a))
     b = tensor_transform(torch.as_tensor(b))
-    
-    a = a.unsqueeze(1)
-    eps=1e-5
-    a = torch.clamp(a, min=eps, max=1.0-eps)
-    
+    if a.device.type == "cuda":
+        dtype = torch.float16
+        a = a.to(dtype)
+        b = b.to(dtype)
+    eps = 1e-5
+    a = torch.clamp(a.unsqueeze(1), min=eps, max=1.0-eps)
     batch_size_a = a.size(0)
     batch_size_b = b.size(0)
-    
-    # Chunk size - adjusted based on available memory
-    chunk_size = 256  
-    
-    js_similarity = torch.zeros((batch_size_a, batch_size_b), device=a.device)
-    
+    chunk_size = 1024  # Adjust as needed for your GPU
+    js_similarity = torch.zeros((batch_size_a, batch_size_b), device=a.device, dtype=torch.float16 if a.device.type == "cuda" else a.dtype)
     for i in range(0, batch_size_b, chunk_size):
         b_chunk = b[i:i + chunk_size]
-        b_chunk = b_chunk.unsqueeze(0)
-        b_chunk = torch.clamp(b_chunk, min=eps, max=1.0-eps)
-        
+        b_chunk = torch.clamp(b_chunk.unsqueeze(0), min=eps, max=1.0-eps)
         m = 0.5 * (a + b_chunk) + eps
-        
         kl_am = torch.sum(a * torch.log2(a / m), dim=-1)
         kl_bm = torch.sum(b_chunk * torch.log2(b_chunk / m), dim=-1)
-        
         js_similarity[:, i:i + chunk_size] = 1.0 - 0.5 * (kl_am + kl_bm)
-        
+    if js_similarity.dtype != torch.float32:
+        js_similarity = js_similarity.to(torch.float32)
     return js_similarity
 
 def pytorch_cos_sim(a: Tensor, b: Tensor) -> Tensor:
@@ -1637,6 +1636,8 @@ def get_device_name() -> str:
         return "npu"
     elif importlib.util.find_spec("habana_frameworks") is not None:
         import habana_frameworks.torch.hpu as hthpu
+
+       
 
         if hthpu.is_available():
             return "hpu"

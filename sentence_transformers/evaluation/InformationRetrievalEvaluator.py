@@ -132,7 +132,7 @@ class InformationRetrievalEvaluator(SentenceEvaluator):
         precision_recall_at_k: list[int] = [1, 3, 5, 10],
         map_at_k: list[int] = [100],
         show_progress_bar: bool = False,
-        batch_size: int = 32,
+        batch_size: int = 128,
         name: str = "",
         write_csv: bool = True,
         truncate_dim: int | None = None,
